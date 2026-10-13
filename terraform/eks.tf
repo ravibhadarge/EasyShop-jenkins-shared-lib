@@ -26,7 +26,7 @@ module "eks" {
 
   eks_managed_node_group_defaults = {
 
-    instance_types = ["t2.large"]
+    instance_types = ["c7i-flex.large"]
 
     attach_cluster_primary_security_group = true
 
@@ -40,20 +40,20 @@ module "eks" {
       max_size     = 3
       desired_size = 2
 
-      instance_types = ["t2.large"]
+      instance_types = ["c7i-flex.large"]
       capacity_type  = "SPOT"
 
-      disk_size = 35 
-      use_custom_launch_template = false  # Important to apply disk size!
+      disk_size                  = 35
+      use_custom_launch_template = false # Important to apply disk size!
 
       tags = {
-        Name = "tws-demo-ng"
+        Name        = "tws-demo-ng"
         Environment = "dev"
-        ExtraTag = "e-commerce-app"
+        ExtraTag    = "e-commerce-app"
       }
     }
   }
- 
+
   tags = local.tags
 
 
