@@ -1,124 +1,153 @@
-@Library('Shared') _
 
 pipeline {
     agent any
-    
+
+    options {
+        skipDefaultCheckout(true)
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
     environment {
-        // Update the main app image name to match the deployment file
         DOCKER_IMAGE_NAME = 'ravibhadarge/easyshop-app'
         DOCKER_MIGRATION_IMAGE_NAME = 'ravibhadarge/easyshop-migration'
         DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
-        GITHUB_CREDENTIALS = credentials('github-credentials')
-        GIT_BRANCH = "master"
+        GIT_BRANCH = 'main'
     }
-    
+
     stages {
-        stage('Cleanup Workspace') {
+        stage('Checkout Application') {
             steps {
-                script {
-                    clean_ws()
-                }
+                checkout scm
+                sh '''
+                    set -eu
+                    echo "Branch: ${GIT_BRANCH}"
+                    echo "Commit: $(git rev-parse --short HEAD)"
+                    test -f Dockerfile
+                    test -f scripts/Dockerfile.migration
+                    test -d kubernetes
+                    echo "Application files verified."
+                '''
             }
         }
-        
-        stage('Clone Repository') {
-            steps {
-                script {
-                    clone("https://github.com/ravibhadarge/EasyShop-jenkins-shared-lib.git","main")
-                }
-            }
-        }
-        
+
         stage('Build Docker Images') {
             parallel {
-                stage('Build Main App Image') {
+                stage('Build Main App') {
                     steps {
-                        script {
-                            docker_build(
-                                imageName: env.DOCKER_IMAGE_NAME,
-                                imageTag: env.DOCKER_IMAGE_TAG,
-                                dockerfile: 'Dockerfile',
-                                context: '.'
-                            )
-                        }
+                        sh '''
+                            docker build \
+                              -f Dockerfile \
+                              -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
+                        '''
                     }
                 }
-                
-                stage('Build Migration Image') {
+
+                stage('Build Migration') {
                     steps {
-                        script {
-                            docker_build(
-                                imageName: env.DOCKER_MIGRATION_IMAGE_NAME,
-                                imageTag: env.DOCKER_IMAGE_TAG,
-                                dockerfile: 'scripts/Dockerfile.migration',
-                                context: '.'
-                            )
-                        }
+                        sh '''
+                            docker build \
+                              -f scripts/Dockerfile.migration \
+                              -t ${DOCKER_MIGRATION_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
+                        '''
                     }
                 }
             }
         }
-        
-        stage('Run Unit Tests') {
-            steps {
-                script {
-                    run_tests()
-                }
-            }
-        }
-        
+
         stage('Security Scan with Trivy') {
             steps {
-                script {
-                    // Create directory for results
-                  
-                    trivy_scan()
-                    
-                }
+                sh '''
+                    set -eu
+                    trivy image --exit-code 1 --severity CRITICAL \
+                      ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+
+                    trivy image --exit-code 1 --severity CRITICAL \
+                      ${DOCKER_MIGRATION_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+                '''
             }
         }
-        
+
         stage('Push Docker Images') {
-            parallel {
-                stage('Push Main App Image') {
-                    steps {
-                        script {
-                            docker_push(
-                                imageName: env.DOCKER_IMAGE_NAME,
-                                imageTag: env.DOCKER_IMAGE_TAG,
-                                credentials: 'docker-hub-credentials'
-                            )
-                        }
-                    }
-                }
-                
-                stage('Push Migration Image') {
-                    steps {
-                        script {
-                            docker_push(
-                                imageName: env.DOCKER_MIGRATION_IMAGE_NAME,
-                                imageTag: env.DOCKER_IMAGE_TAG,
-                                credentials: 'docker-hub-credentials'
-                            )
-                        }
-                    }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-hub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        set -eu
+
+                        echo "$DOCKER_PASSWORD" | docker login \
+                          --username "$DOCKER_USER" --password-stdin
+
+                        docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+                        docker push ${DOCKER_MIGRATION_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+
+                        docker logout
+                    '''
                 }
             }
         }
-        
-        // Add this new stage
+
         stage('Update Kubernetes Manifests') {
             steps {
+                sh '''
+                    set -eu
+
+                    echo "Updating application image tags..."
+
+                    find kubernetes -type f \\( -name '*.yaml' -o -name '*.yml' \\) \
+                      -exec sed -i \
+                      "s#image: *ravibhadarge/easyshop-app:[^[:space:]]*#image: ravibhadarge/easyshop-app:${DOCKER_IMAGE_TAG}#g" {} +
+
+                    find kubernetes -type f \\( -name '*.yaml' -o -name '*.yml' \\) \
+                      -exec sed -i \
+                      "s#image: *ravibhadarge/easyshop-migration:[^[:space:]]*#image: ravibhadarge/easyshop-migration:${DOCKER_IMAGE_TAG}#g" {} +
+
+                    echo "Updated image references:"
+                    grep -Rn 'image:.*ravibhadarge/easyshop-' kubernetes || true
+                '''
+
                 script {
-                    update_k8s_manifests(
-                        imageTag: env.DOCKER_IMAGE_TAG,
-                        manifestsPath: 'kubernetes',
-                        gitCredentials: 'github-credentials',
-                        gitUserName: 'Jenkins CI',
-                        gitUserEmail: 'shubhamnath5@gmail.com'
-                    )
+                    withCredentials([
+                        gitUsernamePassword(
+                            credentialsId: 'github-credentials',
+                            gitToolName: 'Default'
+                        )
+                    ]) {
+                        sh '''
+                            set -eu
+
+                            git config user.name "Jenkins CI"
+                            git config user.email "jenkins@localhost"
+
+                            if ! git diff --quiet -- kubernetes; then
+                                git add kubernetes
+                                git commit -m "ci: update EasyShop images [skip ci]"
+                                git push origin HEAD:main
+                            else
+                                echo "No manifest changes to commit."
+                            fi
+                        '''
+                    }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'EasyShop pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed. Check the first failed stage in the console log.'
+        }
+        always {
+            echo 'Build finished.'
         }
     }
 }
