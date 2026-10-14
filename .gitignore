@@ -93,3 +93,12 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terra-key.pub
 terra-key
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Private keys
+*.pem
+terra-key
