@@ -11,8 +11,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: easyshop.letsdeployit.com
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
