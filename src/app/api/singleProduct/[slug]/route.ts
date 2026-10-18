@@ -10,7 +10,7 @@ export async function GET(
   try {
     await dbConnect();
     
-    const { slug } = params;
+    const { slug } = routeParams;
     
     // First try to find by originalId (which is used as slug)
     let product = await Product.findOne({ originalId: slug });

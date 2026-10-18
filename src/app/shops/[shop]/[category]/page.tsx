@@ -4,19 +4,28 @@ import ProductLoader from "@/components/loader/ProductLoader";
 import { Suspense } from "react";
 
 type CategoryPageProps = {
-  searchParams: SearchParamsType;
-  params: {
+  searchParams: Promise<SearchParamsType>;
+  params: Promise<{
     category: string;
     shop: string;
-  };
+  }>;
 };
 
-const CategoryPage = ({ params, searchParams }: CategoryPageProps) => {
+const CategoryPage = async ({
+  params,
+  searchParams,
+}: CategoryPageProps) => {
+  const routeParams = await params;
+  const queryParams = await searchParams;
+
   return (
     <section className="category-page">
       <SelectedFilters />
       <Suspense fallback={<ProductLoader />}>
-        <ProductGrid searchParams={searchParams} params={params} />
+        <ProductGrid
+          searchParams={queryParams}
+          params={routeParams}
+        />
       </Suspense>
     </section>
   );
