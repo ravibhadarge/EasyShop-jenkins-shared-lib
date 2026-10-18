@@ -30,7 +30,7 @@ const ContactPage = () => {
 
           <div className="mt-4">
             <h4 className="font-semibold mb-1">Email Address</h4>
-            <p className="text-sm text-muted-foreground">iemafzalhassan@gmail.com</p>
+            <p className="text-sm text-muted-foreground">ravibhadarge@gmail.com</p>
           </div>
           <div className="mt-4">
             <h3 className="font-semibold">Follow Me</h3>
@@ -41,7 +41,7 @@ const ContactPage = () => {
                 asChild
               >
                 <a
-                  href="https://github.com/iemafzalhassan"
+                  href="https://github.com/ravibhadarge"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -54,7 +54,7 @@ const ContactPage = () => {
                 asChild
               >
                 <a
-                  href="https://www.linkedin.com/in/iemafzalhassan"
+                  href="https://www.linkedin.com/in/ravibhadarge"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -67,7 +67,7 @@ const ContactPage = () => {
                 asChild
               >
                 <a
-                  href="https://twitter.com/iemafzalhassan"
+                  href="https://twitter.com/ravibhadarge"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

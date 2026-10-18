@@ -82,7 +82,7 @@ resource "aws_instance" "testinstance" {
   }
 
   root_block_device {
-    volume_size = 20
+    volume_size = 40
     volume_type = "gp3"
   }
 }

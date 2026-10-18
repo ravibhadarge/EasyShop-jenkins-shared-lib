@@ -329,13 +329,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions or feedback, please open an issue or contact the maintainers:
 
-- Maintainer - [@Md. Afzal hassan Ehsani](https://github.com/iemafzalhassan)
-- Project Link: [https://github.com/iemafzalhassan/easyshop](https://github.com/iemafzalhassan/easyshop)
+- Maintainer - [@Md. Afzal hassan Ehsani](https://github.com/ravibhadarge)
+- Project Link: [https://github.com/ravibhadarge/easyshop](https://github.com/ravibhadarge/easyshop)
 
 ---
 
 <div align="center">
   <p>
-    Made with ❤️ by <a href="https://iemafzalhassan.tech" target="_blank"><b>Md. Afzal Hassan Ehsani</b></a>
+    Made with ❤️ by <a href="https://ravibhadarge.tech" target="_blank"><b>Md. Afzal Hassan Ehsani</b></a>
   </p>
 </div>
