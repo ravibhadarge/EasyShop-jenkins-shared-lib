@@ -6,17 +6,17 @@ import { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 
 type SingleProductPageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export async function generateMetadata(
   { params }: SingleProductPageProps,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // read route params
-  const slug = params.slug;
+  // Read route params (Next.js 15)
+  const { slug } = await params;
 
   // fetch data
   const res = await fetchData.get(`/singleProduct/${slug}`);
@@ -29,8 +29,9 @@ export async function generateMetadata(
 }
 
 const SingleProductPage = async ({
-  params: { slug },
+  params,
 }: SingleProductPageProps) => {
+  const { slug } = await params;
   const res = await fetchData.get(`/singleProduct/${slug}`);
   const product: SingleProductType | null = res.data || null;
 

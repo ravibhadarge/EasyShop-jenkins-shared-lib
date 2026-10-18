@@ -4,8 +4,9 @@ import Product from '@/lib/models/product';
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  const routeParams = await params;
   try {
     await dbConnect();
     

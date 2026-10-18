@@ -6,8 +6,9 @@ import { requireAuth } from '@/lib/auth/utils';
 // Update cart item quantity
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
+  const routeParams = await params;
   try {
     const auth = await requireAuth(request);
     await dbConnect();
@@ -24,7 +25,7 @@ export async function PUT(
     }
     
     const itemIndex = cart.items.findIndex(
-      item => item.product.toString() === params.productId
+      item => item.product.toString() === routeParams.productId
     );
     
     if (itemIndex === -1) {
@@ -49,8 +50,9 @@ export async function PUT(
 // Remove item from cart
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
+  const routeParams = await params;
   try {
     const auth = await requireAuth(request);
     await dbConnect();
@@ -64,7 +66,7 @@ export async function DELETE(
     }
     
     cart.items = cart.items.filter(
-      item => item.product.toString() !== params.productId
+      item => item.product.toString() !== routeParams.productId
     );
     
     await cart.save();

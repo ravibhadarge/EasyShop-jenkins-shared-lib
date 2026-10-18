@@ -6,14 +6,15 @@ import { requireAuth } from '@/lib/auth/utils';
 // Get single order
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const routeParams = await params;
   try {
     const auth = await requireAuth(request);
     await dbConnect();
     
     const order = await Order.findOne({
-      _id: params.orderId,
+      _id: routeParams.orderId,
       user: auth.userId
     }).populate('items.product', 'title price image');
     
@@ -36,8 +37,9 @@ export async function GET(
 // Update order status (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const routeParams = await params;
   try {
     const auth = await requireAuth(request);
     if (auth.role !== 'admin') {
@@ -52,7 +54,7 @@ export async function PUT(
     const { status } = body;
     
     const order = await Order.findByIdAndUpdate(
-      params.orderId,
+      routeParams.orderId,
       { status },
       { new: true }
     ).populate('items.product', 'title price image');
@@ -76,14 +78,15 @@ export async function PUT(
 // Cancel order
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const routeParams = await params;
   try {
     const auth = await requireAuth(request);
     await dbConnect();
     
     const order = await Order.findOne({
-      _id: params.orderId,
+      _id: routeParams.orderId,
       user: auth.userId
     });
     
