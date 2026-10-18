@@ -1,5 +1,6 @@
 # Stage 1: Development/Build Stage
 FROM node:22-alpine AS builder
+RUN apk upgrade --no-cache
 
 # Set working directory
 WORKDIR /app
@@ -21,6 +22,7 @@ RUN npm run build
 
 # Stage 2: Production Stage
 FROM node:22-alpine AS runner
+RUN apk upgrade --no-cache
 
 # Set working directory
 WORKDIR /app
